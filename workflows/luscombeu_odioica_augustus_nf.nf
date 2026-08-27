@@ -87,8 +87,9 @@ workflow LUSCOMBEU_ODIOICA_AUGUSTUS_NF {
         )
 
     emit:
-    final_gff3 = GFF_SANITIZATION.out.gff3  // channel: [ meta, *.longest_isoform.gff3 ]
-    versions   = ch_versions                 // channel: [ path(versions.yml) ]
+    final_gff3      = GFF_SANITIZATION.out.gff3            // channel: [ meta, ID.gff3 ] (all proper-ORF isoforms)
+    longest_isoform = GFF_SANITIZATION.out.longest_isoform // channel: [ meta, ID_longest_isoform.gff3 ]
+    versions        = ch_versions                          // channel: [ path(versions.yml) ]
 }
 
 /*

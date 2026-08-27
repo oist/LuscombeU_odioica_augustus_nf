@@ -53,7 +53,8 @@ workflow OIST_LUSCOMBEU_ODIOICA_AUGUSTUS_NF {
         params.outdir,
     )
     emit:
-    final_gff3 = LUSCOMBEU_ODIOICA_AUGUSTUS_NF.out.final_gff3 // channel: [ meta, *.longest_isoform.gff3 ]
+    final_gff3      = LUSCOMBEU_ODIOICA_AUGUSTUS_NF.out.final_gff3      // channel: [ meta, ID.gff3 ]
+    longest_isoform = LUSCOMBEU_ODIOICA_AUGUSTUS_NF.out.longest_isoform // channel: [ meta, ID_longest_isoform.gff3 ]
 }
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
