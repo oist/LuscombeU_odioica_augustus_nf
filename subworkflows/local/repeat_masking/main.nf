@@ -78,20 +78,32 @@ workflow REPEAT_MASKING {
     REPEATMODELER_BED ( REPEATMODELER_REPEATMASKER.out.fasta )
     ch_versions = ch_versions.mix( REPEATMODELER_REPEATMODELER.out.versions.first() )
 
-    // Re-key the BED outputs back to the base sample id
-    tantan_bed_metafixed       = TANTAN_BED.out.bed_gz.map        { meta, bed -> [ [ id: meta.key ], bed ] }
-    windowmasker_bed_metafixed = WINDOWMASKER_BED.out.bed_gz.map  { meta, bed -> [ [ id: meta.key ], bed ] }
-    repeatmodeler_bed_metafixed = REPEATMODELER_BED.out.bed_gz.map { meta, bed -> [ [ id: meta.key ], bed ] }
+    // Re-key every channel on the *plain* sample id string so join() matches reliably.
+    //
+    // NOTE: join() matches on the whole first tuple element. input_genomes carries the full
+    // meta map (e.g. [ id, species ]) from the samplesheet, while the masker BED outputs were
+    // re-keyed to [ id: meta.key ] only. Those maps are not equal ([id,species] != [id]), so a
+    // meta-map join silently produces nothing and the whole downstream pipeline is skipped.
+    // Keying on the plain id string avoids that; we re-attach the full genome meta afterwards.
+    genome_keyed            = input_genomes.map               { meta, ref -> [ meta.id,  meta, ref ] }
+    tantan_bed_keyed        = TANTAN_BED.out.bed_gz.map        { meta, bed -> [ meta.key, bed ] }
+    windowmasker_bed_keyed  = WINDOWMASKER_BED.out.bed_gz.map  { meta, bed -> [ meta.key, bed ] }
+    repeatmodeler_bed_keyed = REPEATMODELER_BED.out.bed_gz.map { meta, bed -> [ meta.key, bed ] }
 
     //
-    // Merge all three masks and apply them to the original genome
+    // Merge all three masks and apply them to the original genome. Reconstruct
+    // [ meta, genome, tantan, windowmasker, repeatmasker ] with the FULL genome meta
+    // (preserving 'species', which AUGUSTUS needs downstream).
     //
-    MERGEDMASKS_ALL (
-        input_genomes
-            .join( tantan_bed_metafixed       )
-            .join( windowmasker_bed_metafixed )
-            .join( repeatmodeler_bed_metafixed )
-    )
+    ch_merge_input = genome_keyed
+        .join( tantan_bed_keyed        )
+        .join( windowmasker_bed_keyed  )
+        .join( repeatmodeler_bed_keyed )
+        .map { id, meta, ref, tantan, windowmasker, repeatmasker ->
+            [ meta, ref, tantan, windowmasker, repeatmasker ]
+        }
+
+    MERGEDMASKS_ALL ( ch_merge_input )
     ch_versions = ch_versions.mix( MERGEDMASKS_ALL.out.versions.first() )
 
     emit:
