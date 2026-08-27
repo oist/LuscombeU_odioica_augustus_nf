@@ -81,6 +81,41 @@
                 }
             }
         },
+        "repeat_masking_options": {
+            "title": "Repeat masking options",
+            "type": "object",
+            "fa_icon": "fas fa-mask",
+            "description": "Options controlling repeat soft-masking performed before AUGUSTUS.",
+            "properties": {
+                "mask": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Soft-mask repeats (tantan + WindowMasker + RepeatModeler/RepeatMasker) before running AUGUSTUS.",
+                    "help_text": "When enabled, each genome is soft-masked by combining tantan, WindowMasker and a de-novo RepeatModeler/RepeatMasker run. The merged soft-masked genome ([id]_allmaskers.fasta.gz) is then used for gene prediction. Disable to feed the raw genome to AUGUSTUS.",
+                    "fa_icon": "fas fa-mask"
+                },
+                "dfam": {
+                    "type": "string",
+                    "format": "directory-path",
+                    "description": "Path to a local Dfam library directory (RepeatMasker -libdir). Only used when running the DFAM/taxon workflow.",
+                    "fa_icon": "fas fa-database",
+                    "hidden": true
+                },
+                "taxon": {
+                    "type": "string",
+                    "description": "Taxon/species passed to RepeatMasker (-species) for a DFAM search. Not used by the default RepeatModeler workflow.",
+                    "fa_icon": "fas fa-sitemap",
+                    "hidden": true
+                },
+                "repeatlib": {
+                    "type": "string",
+                    "format": "file-path",
+                    "description": "External repeat library FASTA for RepeatMasker (-lib). Not used by the default RepeatModeler workflow.",
+                    "fa_icon": "fas fa-book",
+                    "hidden": true
+                }
+            }
+        },
         "institutional_config_options": {
             "title": "Institutional config options",
             "type": "object",
@@ -238,6 +273,9 @@
         },
         {
             "$ref": "#/$defs/reference_genome_options"
+        },
+        {
+            "$ref": "#/$defs/repeat_masking_options"
         },
         {
             "$ref": "#/$defs/institutional_config_options"

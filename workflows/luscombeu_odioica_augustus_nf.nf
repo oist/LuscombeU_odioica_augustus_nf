@@ -3,6 +3,7 @@
     IMPORT MODULES / SUBWORKFLOWS / FUNCTIONS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
+include { REPEAT_MASKING         } from '../subworkflows/local/repeat_masking/main'
 include { AUGUSTUS_PREDICTION    } from '../subworkflows/local/augustus_prediction/main'
 include { GFF_SANITIZATION       } from '../subworkflows/local/gff_sanitization/main'
 include { softwareVersionsToYAML } from '../subworkflows/nf-core/utils_nfcore_pipeline'
@@ -24,9 +25,31 @@ workflow LUSCOMBEU_ODIOICA_AUGUSTUS_NF {
     def ch_versions = channel.empty()
 
     //
+    // SUBWORKFLOW: Soft-mask repeats (tantan + WindowMasker + RepeatModeler/RepeatMasker)
+    // Produces [ meta, *_allmaskers.fasta.gz ] which replaces the genome fed to AUGUSTUS.
+    // Toggle with --mask (default: true).
+    //
+    def ch_for_augustus
+    if (params.mask) {
+        // Split samplesheet into genome (for masking) and transcripts (kept aside)
+        def ch_genome = ch_samplesheet.map { meta, genome, trans -> [ meta, genome ] }
+        def ch_trans  = ch_samplesheet.map { meta, genome, trans -> [ meta, trans ] }
+
+        REPEAT_MASKING(ch_genome)
+        ch_versions = ch_versions.mix(REPEAT_MASKING.out.versions)
+
+        // Recombine the soft-masked genome with the transcripts: [ meta, masked_genome, trans ]
+        ch_for_augustus = REPEAT_MASKING.out.masked_fa
+            .join(ch_trans)
+            .map { meta, masked_genome, trans -> [ meta, masked_genome, trans ] }
+    } else {
+        ch_for_augustus = ch_samplesheet
+    }
+
+    //
     // SUBWORKFLOW: Predict genes with AUGUSTUS (minimap2 → bam2hints → augustus → getAnnoFasta)
     //
-    AUGUSTUS_PREDICTION(ch_samplesheet)
+    AUGUSTUS_PREDICTION(ch_for_augustus)
 
     //
     // SUBWORKFLOW: Sanitize GFF3 with AGAT (filter incomplete → flag premature stops → longest isoform)

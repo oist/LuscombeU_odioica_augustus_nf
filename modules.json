@@ -14,6 +14,16 @@
                         "branch": "master",
                         "git_sha": "98403d15b0e50edae1f3fec5eae5e24982f1fade",
                         "installed_by": ["modules"]
+                    },
+                    "repeatmodeler/builddatabase": {
+                        "branch": "master",
+                        "git_sha": "1cbb5551b917aa423e414dcd69898d01520a309d",
+                        "installed_by": ["modules"]
+                    },
+                    "repeatmodeler/repeatmodeler": {
+                        "branch": "master",
+                        "git_sha": "84efd2f87d07deb22ee9378f065a9aa5f1434161",
+                        "installed_by": ["modules"]
                     }
                 }
             },
