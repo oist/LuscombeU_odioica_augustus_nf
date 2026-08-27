@@ -93,21 +93,11 @@ workflow PIPELINE_INITIALISATION {
 
     channel
         .fromList(samplesheetToList(input, "${projectDir}/assets/schema_input.json"))
-        .map {
-            meta, fastq_1, fastq_2 ->
-                if (!fastq_2) {
-                    return [ meta.id, meta + [ single_end:true ], [ fastq_1 ] ]
-                } else {
-                    return [ meta.id, meta + [ single_end:false ], [ fastq_1, fastq_2 ] ]
-                }
-        }
-        .groupTuple()
-        .map { samplesheet ->
-            validateInputSamplesheet(samplesheet)
-        }
-        .map {
-            meta, fastqs ->
-                return [ meta, fastqs.flatten() ]
+        .map { meta, genome, trans ->
+            // 'species' is folded into meta via the schema "meta": ["species"] annotation,
+            // so each row is emitted as [ meta, genome, trans ]
+            validateInputSamplesheet(meta, genome, trans)
+            return [ meta, file(genome), file(trans) ]
         }
         .set { ch_samplesheet }
 
@@ -130,11 +120,10 @@ workflow PIPELINE_COMPLETION {
     plaintext_email // boolean: Send plain-text email instead of HTML
     outdir          //    path: Path to output directory where results will be published
     monochrome_logs // boolean: Disable ANSI colour codes in log output
-    multiqc_report  //  string: Path to MultiQC report
+    _unused         //         unused placeholder (no MultiQC report)
 
     main:
     summary_params = paramsSummaryMap(workflow, parameters_schema: "nextflow_schema.json")
-    def multiqc_reports = multiqc_report.toList()
 
     //
     // Completion email and summary
@@ -148,7 +137,7 @@ workflow PIPELINE_COMPLETION {
                 plaintext_email,
                 outdir,
                 monochrome_logs,
-                multiqc_reports.getVal(),
+                [],
             )
         }
 
@@ -176,16 +165,19 @@ def validateInputParameters() {
 //
 // Validate channels from input samplesheet
 //
-def validateInputSamplesheet(input) {
-    def (metas, fastqs) = input[1..2]
-
-    // Check that multiple runs of the same sample are of the same datatype i.e. single-end / paired-end
-    def endedness_ok = metas.collect{ meta -> meta.single_end }.unique().size == 1
-    if (!endedness_ok) {
-        error("Please check input samplesheet -> Multiple runs of a sample must be of the same datatype i.e. single-end or paired-end: ${metas[0].id}")
+def validateInputSamplesheet(meta, genome, trans) {
+    if (!meta.id) {
+        error("Please check input samplesheet -> 'sample' column must be provided and cannot be empty")
     }
-
-    return [ metas[0], fastqs ]
+    if (!meta.species) {
+        error("Please check input samplesheet -> 'species' column must be provided for sample: ${meta.id}")
+    }
+    if (!genome) {
+        error("Please check input samplesheet -> 'genome' column must be provided for sample: ${meta.id}")
+    }
+    if (!trans) {
+        error("Please check input samplesheet -> 'trans' column must be provided for sample: ${meta.id}")
+    }
 }
 //
 // Get attribute from genome config file e.g. fasta

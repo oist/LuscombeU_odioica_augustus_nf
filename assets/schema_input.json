@@ -13,21 +13,27 @@
                 "errorMessage": "Sample name must be provided and cannot contain spaces",
                 "meta": ["id"]
             },
-            "fastq_1": {
+            "genome": {
                 "type": "string",
                 "format": "file-path",
                 "exists": true,
-                "pattern": "^([\\S\\s]*\\/)?[^\\s\\/]+\\.f(ast)?q\\.gz$",
-                "errorMessage": "FastQ file for reads 1 must be provided, cannot contain spaces and must have extension '.fq.gz' or '.fastq.gz'"
+                "pattern": "^([\\S\\s]*\\/)?[^\\s\\/]+\\.fn?a(sta)?(\\.gz)?$",
+                "errorMessage": "Genome FASTA file must be provided, cannot contain spaces and must have extension '.fa', '.fasta', '.fna', or '.fa.gz'"
             },
-            "fastq_2": {
+            "trans": {
                 "type": "string",
                 "format": "file-path",
                 "exists": true,
-                "pattern": "^([\\S\\s]*\\/)?[^\\s\\/]+\\.f(ast)?q\\.gz$",
-                "errorMessage": "FastQ file for reads 2 cannot contain spaces and must have extension '.fq.gz' or '.fastq.gz'"
+                "pattern": "^([\\S\\s]*\\/)?[^\\s\\/]+\\.fn?a(sta)?(\\.gz)?$",
+                "errorMessage": "Transcriptome FASTA file must be provided, cannot contain spaces and must have extension '.fa', '.fasta', '.fna', or '.fa.gz'"
+            },
+            "species": {
+                "type": "string",
+                "pattern": "^\\S+$",
+                "errorMessage": "Species name must be provided and cannot contain spaces (e.g. oikopleura_dioica_okinawa_1)",
+                "meta": ["species"]
             }
         },
-        "required": ["sample", "fastq_1"]
+        "required": ["sample", "genome", "trans", "species"]
     }
 }
